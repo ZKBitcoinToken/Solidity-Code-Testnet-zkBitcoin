@@ -542,7 +542,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 
     uint public ETHBalance;
     address public prevMiner;
-    uint16 public prevGoodLoops;
+    uint16 public prevGoodLoops=1;
     uint16 public prevBadLoops;
 
     //20% extra under 500 tokens
@@ -588,13 +588,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
     function setGAS_BUFFER (uint256 GAS_BUFFERzz)public onlyOwner {
 	    GAS_BUFFER = GAS_BUFFERzz;
     }
-    function setGAS_BUFFER2 (uint256 GAS_BUFFERzz)public onlyOwner {
-	    GAS_BUFFER2 = GAS_BUFFERzz;
-    }
     
-    function getGAS_BUFFER2  ()public view returns (uint) {
-	    return GAS_BUFFER2;
-    }
     function getGAS_BUFFER  ()public view returns (uint) {
 	    return GAS_BUFFER;
     }
