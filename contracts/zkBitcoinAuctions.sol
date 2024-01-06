@@ -2,8 +2,8 @@
 //
 //  Website: https://zkBitcoin.org
 //  Auctions dAPP: https://zkBitcoin.org/dapp/auctions/
-//  Staking zkBitcoin / Ethereum LP dAPP: https://zkBitcoin.org/dapp/StakingETH/
-//  Staking zkBitcoin / 0xBitcoin LP dAPP: https://zkBitcoin.org/dapp/Staking0xBTC/
+//  Staking zkBitcoin / Ethereum LP dAPP: https://zkBitcoin.org/dapp/stakingETH/
+//  Staking zkBitcoin / 0xBitcoin LP dAPP: https://zkBitcoin.org/dapp/staking0xBTC/
 //  Github: https://github.com/zkBitcoinToken/
 //  Discord: https://discord.gg/FwXGz5PvjF
 //

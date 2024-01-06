@@ -1,8 +1,8 @@
 // Zero Knowledge Bitcoin Token - zkBitcoin (zkBTC) Token - Ethereum LP Staking Contract
 //
 // Website: https://zkBitcoin.org
-// Staking zkBitcoin / Ethereum LP dAPP: https://zkBitcoin.org/StakingETH/
-// Staking zkBitcoin / 0xBitcoin LP dAPP: https://zkBitcoin.org/Staking0xBTC/
+// Staking zkBitcoin / Ethereum LP dAPP: https://zkBitcoin.org/stakingETH/
+// Staking zkBitcoin / 0xBitcoin LP dAPP: https://zkBitcoin.org/staking0xBTC/
 // Auctions dAPP: https://zkBitcoin.org/auctions/
 // Github: https://github.com/zkBitcoin-Token/
 // Discord: https://discord.gg/FwXGz5PvjF

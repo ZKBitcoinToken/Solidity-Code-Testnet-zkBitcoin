@@ -1,26 +1,26 @@
-//TESTNET Goerli ZKSYNC ERA VERSION
+//TESTNET Goerli ZKSYNC ERA VERSION https://testnet.zkBitcoin.org/ Just click around and find stuff for now
+//DELETE THESE LINES
+
 // Zero Knowledge Bitcoin - zkBitcoin (zkBTC) Token - Token and Mining Contract
 //
 //MUST FIX BEFORE LAUNCH Fix Start Time to normal
-//_startNewMiningEpoch_MultiMint_Mass_Epochs must be internal
 // startTime = 1704906000;
-
-//reward_amount = 0 need to be put in at constructor instead of 50 *10**18
-
-/*    function mint(address _to, uint256 _amount) public returns (bool) {
-        _mint(_to, _amount);
-        return true;
-    }
-
-*/
+//
+/* must remove adjustDiff
+//for testnet only
+	function AdjustDiff(uint diff) public onlyOwner{
+		require(diff<100000,"Low only");
+		miningTarget=_MAXIMUM_TARGET.div(diff);
+	}
 
 
-	    
+
+*///
 // Zero Knowledge Bitcoin - zkBitcoin (zkBTC) Token - Token and Mining and Paymaster Contract
 //
 // Website: https://zkBitcoin.org
-// Staking zkBitcoin / Ethereum LP dAPP: https://zkBitcoin.org/dapp/StakingETH/
-// Staking zkBitcoin / 0xBitcoin LP dAPP: https://zkBitcoin.org/dapp/Staking0xBTC/
+// Staking zkBitcoin / Ethereum LP dAPP: https://zkBitcoin.org/dapp/stakingETH/
+// Staking zkBitcoin / 0xBitcoin LP dAPP: https://zkBitcoin.org/dapp/staking0xBTC/
 // Auctions dAPP: https://zkBitcoin.org/dapp/auctions/
 // Github: https://github.com/zkBitcoinToken/
 // Discord: https://discord.gg/hZ8yzcCRFJ
@@ -577,6 +577,15 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
     
     
     
+    function setBADLevelFee (uint256 BADfee)public onlyOwner {
+	    BADLevelFee = BADfee;
+    }
+    
+    function setMinimumBADMintLevelForFee (uint256 BADfeeLevel)public onlyOwner {
+	    minimumBADMintLevelForFee = BADfeeLevel;
+    }
+    
+    
     function setMinimumMintLevelForFee (uint256 feeLevel)public onlyOwner {
 	    minimumMintLevelForFee = feeLevel;
     }
@@ -585,9 +594,10 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 	    minimumLevelFee = fee;
     }
     
-    function setGAS_BUFFER (uint256 GAS_BUFFERzz)public onlyOwner {
-	    GAS_BUFFER = GAS_BUFFERzz;
+    function setGAS_BUFFER (uint256 GAS_BUFFER_set)public onlyOwner {
+	    GAS_BUFFER = GAS_BUFFER_set;
     }
+    
     
     function getGAS_BUFFER  ()public view returns (uint) {
 	    return GAS_BUFFER;
@@ -600,6 +610,17 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
     
     function getMinimumLevelFee ()public view returns (uint) {
 	    return minimumLevelFee;
+    }
+    
+
+    
+    
+    function getMinimumBADMintLevelForFee  ()public view returns (uint) {
+	    return minimumBADMintLevelForFee;
+    }
+    
+    function getBADLevelFee () public view returns (uint) {
+	    return BADLevelFee;
     }
     
 
@@ -731,12 +752,13 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 		uint16 totalGoodLoops = 0;
 		uint NextEpochCount = blocksToReadjust();
 		uint16 badLoops =0;
+		uint miningTarget2 = miningTarget;
 		for (uint i = 0; i < nonce.length; i++) {
 		    
 		    
 				bytes32 digest =  keccak256(abi.encodePacked(challengeNumber2[i], address(uint160(_transaction.from)), nonce[i]));
 				
-				if(uint256(digest) < miningTarget && !usedCombinations[digest] && challengeNumber2[i] == MultiMintChallengeNumber)
+				if(uint256(digest) < miningTarget2 && !usedCombinations[digest] && challengeNumber2[i] == MultiMintChallengeNumber)
 				{
 					usedCombinations[digest] = true;
 					totalGoodLoops=totalGoodLoops+1;
@@ -749,8 +771,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 					}
 					MultiMintChallengeNumber = getChallengeNumber();
 					NextEpochCount = totalGoodLoops + _BLOCKS_PER_READJUSTMENT;
-					
-					miningTarget = reAdjustsToWhatDifficulty_MaxPain_Target();
+					miningTarget2 = reAdjustsToWhatDifficulty_MaxPain_Target();
 					leftOver = false;
 				}
 			
@@ -780,7 +801,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 
 	function postTransaction(bytes calldata _context, Transaction calldata _transaction, bytes32, bytes32, ExecutionResult _txResult, uint256 _maxRefundedGas) external payable override onlyBootloader {
      
-   
+   		//Nothing here
    
 }
     
@@ -797,7 +818,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 	function TheEndOfPayMaster() public {
 	    // Calculate half of the contract's current balance
 	    uint256 halfBalance = address(this).balance / 2;
-  	    require(_totalSupply > tokensMinted,"Mining not over, get to work!");
+  	    require(_totalSupply <= tokensMinted+100*10**18,"Mining not over, get to work!");
 	    // Ensure there is some balance to send
 	    if (halfBalance > 0) {
 		address payable to = payable(AddressLPReward);
@@ -809,7 +830,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 		(bool sent2, ) = to2.call{value: halfBalance}("");
 		require(sent2, "Failed to send Ether");
 	    }
-	}	
+	}
 
 //Allow ETH to enter
 	receive() external payable {
@@ -864,6 +885,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
     uint public latestDifficultyPeriodStarted2 = block.timestamp; //BlockTime of last readjustment
     uint public latestDifficultyPeriodStarted = block.number; // for readjustments
     uint public epochCount = 0;//number of 'blocks' mined
+//MUST CHANGE BACK TO 2048
     uint public _BLOCKS_PER_READJUSTMENT = 2048; // should be 2048 blocks more inline with BTC
     uint public  _MAXIMUM_TARGET = 2**234;
     //a little number
@@ -890,11 +912,11 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 	constructor() ERC20("zkBitcoin", "zkBTC") ERC20Permit("zkBitcoin") {
 		// mint 1 token to setup LPs
 		_mint(msg.sender, 1000000000000000000);
-		miningTarget = _MAXIMUM_TARGET.div(1); //super difficult so no1 can solve till OpenMining
-//mUST CHANGE STARTTIME BACK
+		miningTarget = _MAXIMUM_TARGET.div(4); //easy difficulty u can solve but no reward until startTime and OpenMining is ran
+//MUST CHANGE STARTTIME BACK
 		startTime = block.timestamp;// 1704906000;  //Date and time (GMT):  Wednesday, January 10, 2024 5:00:00 PM GMT
-//MUST ADJUST REWARD TO BE ZERO BEFORE LAUNCH BELOW
-		reward_amount = 50*10**18;  //Zero reward for first days to setup miners
+//MUST CHANGE STARTTIME BACK
+		reward_amount = 0;  //Zero reward for first days to setup miners
 		rewardEra = 0;
 		tokensMinted = 0;
 		epochCount = 0;
@@ -944,11 +966,10 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 
 //for testnet only
 	function AdjustDiff(uint diff) public onlyOwner{
+//for testnet only
 		require(diff<100000,"Low only");
 		miningTarget=_MAXIMUM_TARGET.div(diff);
 	}
-
-
 
 
 	function openMining() public returns (bool success) {
@@ -1010,16 +1031,8 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 			maxSupplyForEra = _totalSupply - _totalSupply.div( 2**(rewardEra + 1));
 			if(rewardEra < 3){
 				targetTime = ((12 * 60) * 2**rewardEra);
-
-				if(rewardEra < 6){
-					if(_BLOCKS_PER_READJUSTMENT <= 16){
-						_BLOCKS_PER_READJUSTMENT = 8;
-					}else{
-						_BLOCKS_PER_READJUSTMENT = _BLOCKS_PER_READJUSTMENT / 2;
-					}
-				}
+				_BLOCKS_PER_READJUSTMENT = _BLOCKS_PER_READJUSTMENT.div(2);
 			}else{
-
 				reward_amount = ( 50 * 10**18)/( 2**(rewardEra - 2  ) );
 			}
 			payout = payout.div(2);
@@ -1081,17 +1094,9 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 			maxSupplyForEra = _totalSupply - _totalSupply.div( 2**(rewardEra + 1));
 			if(rewardEra < 3){
 				targetTime = ((12 * 60) * 2**rewardEra);
-
-				if(rewardEra < 6){
-					if(_BLOCKS_PER_READJUSTMENT <= 16){
-						_BLOCKS_PER_READJUSTMENT = 8;
-					}else{
-						_BLOCKS_PER_READJUSTMENT = _BLOCKS_PER_READJUSTMENT / 2;
-					}
-				}
+				_BLOCKS_PER_READJUSTMENT = _BLOCKS_PER_READJUSTMENT.div(2);
 			}else{
-
-				reward_amount = ( 50 * 10**18)/( 2**(rewardEra - 2  ) );
+				reward_amount = ( 50 * 10**18)/( 2**(rewardEra - 2 ) );
 			}
 			payout = payout.div(2);
 		}
@@ -1116,13 +1121,13 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 
 
 	function mintNFTGOBlocksUntil() public view returns (uint num) {
-		return _BLOCKS_PER_READJUSTMENT/8 - (slowBlocks % (_BLOCKS_PER_READJUSTMENT/8 ));
+		return _BLOCKS_PER_READJUSTMENT - (slowBlocks % (_BLOCKS_PER_READJUSTMENT ));
 	}
 	
 
 
 	function mintNFTGO() public view returns (uint num) {
-		return slowBlocks % (_BLOCKS_PER_READJUSTMENT/8);
+		return slowBlocks % (_BLOCKS_PER_READJUSTMENT);
 	}
 	
 
@@ -1394,16 +1399,8 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 			maxSupplyForEra = _totalSupply - _totalSupply.div( 2**(rewardEra + 1));
 			if(rewardEra < 3){
 				targetTime = ((12 * 60) * 2**rewardEra);
-
-				if(rewardEra < 6){
-					if(_BLOCKS_PER_READJUSTMENT <= 16){
-						_BLOCKS_PER_READJUSTMENT = 8;
-					}else{
-						_BLOCKS_PER_READJUSTMENT = _BLOCKS_PER_READJUSTMENT / 2;
-					}
-				}
+				_BLOCKS_PER_READJUSTMENT = _BLOCKS_PER_READJUSTMENT.div(2);
 			}else{
-
 				reward_amount = ( 50 * 10**18)/( 2**(rewardEra - 2  ) );
 			}
 		}
