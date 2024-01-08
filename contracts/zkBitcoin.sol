@@ -729,6 +729,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 		
         uint amt = address(this).balance - ETHBalance;
         
+	uint price = getPriceX1000();
         uint refundAmtz = (amt * price) / 1000;
 		      
         return refundAmtz;
@@ -817,8 +818,8 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 			
 		}
 
-       	uint totalZKBTC = (_requiredETH * price) / 1000;
-		uint costPerGoodMint = totalZKBTC / _goodLoops;
+       	uint totalZKBTC = (requiredETH * price) / 1000;
+		uint costPerGoodMint = totalZKBTC / totalGoodLoops;
 		if (badLoops > localMinimumBADMintLevelForFee) {
 		    uint baseIncreasePerBadLoop = ((costPerGoodMint * 5 * 1000 )/ 100) / localBADLevelFee;
 		    uint excessBadLoops = badLoops - localMinimumBADMintLevelForFee;
@@ -851,7 +852,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 		 ETHBalance = address(this).balance;
 		 prevMiner = address(uint160(_transaction.from));
 
-		uint gasExtra = (totalGoodLoops+goodLoopsGasExtra)/goodLoopsGasExtra+(badLoops+badLoopsGasExtra)/badLoopsGasExtra+TotalDataAMT/;
+		uint gasExtra = (totalGoodLoops+goodLoopsGasExtra)/goodLoopsGasExtra+(badLoops+badLoopsGasExtra)/badLoopsGasExtra;
             require(gasleft() > GAS_BUFFER*gasExtra, "Not enough gas left to safely proceed, please raise your gasLimit before sending");
 
         } else {
@@ -1538,7 +1539,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 	}
 
 	function reAdjustsToWhatDifficulty_MaxPain_Target() public view returns (uint target) {
-		uint epochTotal = _BLOCKS_PER_READJUSTMENT
+		uint epochTotal = _BLOCKS_PER_READJUSTMENT;
 		uint adjusDiffTargetTime = targetTime *  epochTotal; 
 		uint256 blktimestamp = block.timestamp;
 		uint TimeSinceLastDifficultyPeriod2 = blktimestamp - latestDifficultyPeriodStarted2+1;
@@ -1579,7 +1580,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 	
 
 	function reAdjustsToWhatDifficulty_MaxPain_Target_AdditionalTime(uint addTime) public view returns (uint target) {
-		uint epochTotal = _BLOCKS_PER_READJUSTMENT
+		uint epochTotal = _BLOCKS_PER_READJUSTMENT;
 		uint adjusDiffTargetTime = targetTime *  epochTotal; 
 		uint256 blktimestamp = block.timestamp + addTime;
 		uint TimeSinceLastDifficultyPeriod2 = blktimestamp - latestDifficultyPeriodStarted2+1;
