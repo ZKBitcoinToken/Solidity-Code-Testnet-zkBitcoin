@@ -713,8 +713,8 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
             uint feeMultiplier = (deficit * 2000) / minimumLevelFee;
             totalZKBTC += (totalZKBTC * feeMultiplier) / 1000;
         }
-        uint refund = (_TotalETHrefunded * price) / 1000;
-        uint totalz = _goodLoops*reward_amount - totalZKBTC + refunds
+        uint refunds = (_TotalETHrefunded * price) / 1000;
+        uint totalz = _goodLoops*reward_amount - totalZKBTC + refunds;
 
         return totalz;
     }
