@@ -572,7 +572,11 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
         _;
     }
 
-    
+       
+///
+//Admin functions for Paymaster
+///
+
     bool setOnce =false;
     function setPool(address pairETH) public onlyOwner{
     	require(!setOnce, "Only set the pool once");
@@ -613,6 +617,9 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 	    GAS_BUFFER = GAS_BUFFER_set;
     }
     
+///
+//View functions
+///
     
     function getGAS_BUFFER  ()public view returns (uint) {
 	    return GAS_BUFFER;
@@ -650,8 +657,6 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
     
 
     // Returns the price of `token` in terms of ETH x1000
-    
-    
     function  getPriceX1000() public view returns (uint) {
 
         IUniswapV2Pair pair = IUniswapV2Pair(pairAddress);
@@ -677,7 +682,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
         }
         
         
-    // Calculate the fee for good loops
+        // Calculate the fee for good loops
         if (_goodLoops < minimumMintLevelForFee) {
             uint deficit = minimumMintLevelForFee - _goodLoops;
             uint feeMultiplier = (deficit * 2000) / minimumLevelFee;
@@ -688,7 +693,35 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
     }
 	    
 	    
+    //Calculates total zkBitcoin you will recieve with all factors considered of transaction, _TotalETHsent and _TotalETHrefunded is in wei units obviously
+    function calculateZKBTC_With_Refund(uint _goodLoops, uint _badLoops, uint _TotalETHsent, uint _TotalETHrefunded) public view returns (uint) {
+        uint price = getPriceX1000();
+
+        uint totalZKBTC = (_TotalETHsent * price) / 1000;
+        uint costPerGoodMint = totalZKBTC / _goodLoops;
+        // Calculate the fee for too many bad loops
+        if (_badLoops > minimumBADMintLevelForFee) {
+            uint baseIncreasePerBadLoop = ((costPerGoodMint * 5 * 1000 )/ 100) / BADLevelFee;
+            uint excessBadLoops = _badLoops - minimumBADMintLevelForFee;
+            totalZKBTC = totalZKBTC + (baseIncreasePerBadLoop * excessBadLoops);
+        }
+        
+        
+        // Calculate the fee for too few good loops
+        if (_goodLoops < minimumMintLevelForFee) {
+            uint deficit = minimumMintLevelForFee - _goodLoops;
+            uint feeMultiplier = (deficit * 2000) / minimumLevelFee;
+            totalZKBTC += (totalZKBTC * feeMultiplier) / 1000;
+        }
+        uint refund = (_TotalETHrefunded * price) / 1000;
+        uint totalz = _goodLoops*reward_amount - totalZKBTC + refunds
+
+        return totalz;
+    }
+	    
+	    
     //Tells us the minimum level of Goodloops required for a certian maount of ETH
+    // Means ZERO badLoops in this context
     function findMinimumGoodLoops(uint _requiredETH) public view returns (uint) {
         uint price = getPriceX1000();
         uint goodLoops = 1; // Start with 1 good loop
@@ -736,6 +769,10 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
     }
 	
 	
+   
+///
+//Main Paymaster functions
+///
 	
     function validateAndPayForPaymasterTransaction(bytes32, bytes32,Transaction calldata _transaction) external payable onlyBootloader returns (bytes4 magic, bytes memory context)
     {
@@ -788,7 +825,6 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
    		bool leftOver = true;
 		uint totalGoodLoops = 0;
 		uint NextEpochCount = blocksToReadjust();
-		uint badLoops =0;
 		uint miningTarget2 = miningTarget;
 		uint localBlocksPerReadjustment = _BLOCKS_PER_READJUSTMENT; // Caching the state variable
 		bytes32 localMultiMintChallengeNumber=MultiMintChallengeNumber;
@@ -799,25 +835,26 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 		    
 				bytes32 digest =  keccak256(abi.encodePacked(challengeNumber2[i], address(uint160(_transaction.from)), nonce[i]));
 				
-				if(uint256(digest) < miningTarget2 && !usedCombinations[digest] && challengeNumber2[i] == localMultiMintChallengeNumber && totalGoodLoops < NextEpochCount)
+				if(uint256(digest) < miningTarget2 && !usedCombinations[digest] && challengeNumber2[i] == localMultiMintChallengeNumber)
 				{
 					usedCombinations[digest] = true;
 					totalGoodLoops=totalGoodLoops+1;
-				}else{
-					badLoops = badLoops + 1;
-	  			}
+				}
 				if(totalGoodLoops == NextEpochCount){
-					if(leftOver){
-						localMultiMintChallengeNumber = getChallengeNumber();
-						NextEpochCount = totalGoodLoops + localBlocksPerReadjustment;
-						miningTarget2 = reAdjustsToWhatDifficulty_MaxPain_Target();
-						leftOver = false;
+					if(!leftOver){
+						break;
 					}
+					localMultiMintChallengeNumber = getChallengeNumber();
+					NextEpochCount = totalGoodLoops + localBlocksPerReadjustment;
+					miningTarget2 = reAdjustsToWhatDifficulty_MaxPain_Target();
+					leftOver = false;
+				
 				}
 			
 			
 		}
-
+		uint badLoops = nonce.length - totalGoodLoops;
+		
        	uint totalZKBTC = (requiredETH * price) / 1000;
 		uint costPerGoodMint = totalZKBTC / totalGoodLoops;
 		if (badLoops > localMinimumBADMintLevelForFee) {
@@ -1543,7 +1580,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 		uint adjusDiffTargetTime = targetTime *  epochTotal; 
 		uint256 blktimestamp = block.timestamp;
 		uint TimeSinceLastDifficultyPeriod2 = blktimestamp - latestDifficultyPeriodStarted2+1;
-        uint miningTarget2 = 0;
+        	uint miningTarget2 = 0;
 
 		//if there were less eth blocks passed in time than expected
 		if( TimeSinceLastDifficultyPeriod2 < adjusDiffTargetTime )
