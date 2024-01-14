@@ -3,6 +3,10 @@
 
 // Zero Knowledge Bitcoin - zkBitcoin (zkBTC) Token - Token and Mining Contract
 //
+//REMOVE THIS BEFORE LAUNCHING, remove all traces of it functionSelector2
+
+//bytes4 public functionSelector2;
+
 //MUST FIX BEFORE LAUNCH Fix Start Time to normal
 // startTime = 1705510800;
 //
@@ -543,14 +547,13 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 //PayMaster Stuff First then Minting
 ////
 
-
     uint public ETHBalance;
     address public prevMiner;
     //Every 15 good blocks add GAS_BUFFER
     uint public goodLoopsGasExtra=15;
     //Every 30 bad blocks add GAS_BUFFER	
     uint public badLoopsGasExtra=30;
-    //20% extra under 500 tokens
+    //20% extra each mint under 10 Mints
     uint public minimumMintLevelForFee=10;
     uint public minimumLevelFee=10;
     //5% extra for every fails is overdoing it I believe right
@@ -686,7 +689,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
         if (_goodLoops < minimumMintLevelForFee) {
             uint deficit = minimumMintLevelForFee - _goodLoops;
             uint feeMultiplier = (deficit * 2000) / minimumLevelFee;
-            totalZKBTC += (totalZKBTC * feeMultiplier) / 1000;
+            totalZKBTC = totalZKBTC + (totalZKBTC * feeMultiplier) / 1000;
         }
 
         return totalZKBTC;
@@ -711,7 +714,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
         if (_goodLoops < minimumMintLevelForFee) {
             uint deficit = minimumMintLevelForFee - _goodLoops;
             uint feeMultiplier = (deficit * 2000) / minimumLevelFee;
-            totalZKBTC += (totalZKBTC * feeMultiplier) / 1000;
+            totalZKBTC = totalZKBTC + (totalZKBTC * feeMultiplier) / 1000;
         }
         uint refunds = (_TotalETHrefunded * price) / 1000;
         uint totalz = _goodLoops*reward_amount - totalZKBTC + refunds;
@@ -733,7 +736,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
             if (goodLoops < minimumMintLevelForFee) {
 		    uint deficit = minimumMintLevelForFee - goodLoops;
 		    uint feeMultiplier = (deficit * 2000) / minimumLevelFee;
-		    totalZKBTC += (totalZKBTC * feeMultiplier) / 1000;
+		    totalZKBTC = totalZKBTC + (totalZKBTC * feeMultiplier) / 1000;
             }
             
             if (goodLoops*reward_amount>totalZKBTC) {
@@ -789,7 +792,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
         if (paymasterInputSelector == IPaymasterFlow.approvalBased.selector) {
            // the data is not needed for this paymaster
             
-		require(address(uint160(_transaction.to)) ==address(this),"CANT MINT TO ANYTHING ELSE");
+		require(address(uint160(_transaction.to)) ==address(this),"Only allows zkBitcoin to be minted using the Paymaster");
             	uint amt = address(this).balance - ETHBalance;
             	
 		uint price = getPriceX1000();
@@ -811,31 +814,33 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 		}
 		
     		bytes4 functionSelector=  bytes4(_transaction.data[:4]);
-		require(bytes4(0x4005c5f4) ==functionSelector,"CANT MINT ANYTHING ELSE");
+		require(bytes4(0xa9802fa9) ==functionSelector,"Must only use multiMint_PayMaster_EZ and send it using Paymaster with approvalbased selector");
 		address mintToAddress;
 		uint256[] memory nonce;
-	 	bytes32[] memory challengeNumber2;
+	 	//bytes32[] memory challengeNumber2;
 
 		// Decode the input data
-		(mintToAddress, nonce, challengeNumber2) = abi.decode( _transaction.data[4:], (address, uint256[], bytes32[]));
-		require(nonce.length == challengeNumber2.length, "No different sized arrays for nonces and challengeNumbers, must be same sized array");
+		(mintToAddress, nonce) = abi.decode( _transaction.data[4:], (address, uint256[]));
+		//require(nonce.length == challengeNumber2.length, "No different sized arrays for nonces and challengeNumbers, must be same sized array");
+		require(nonce.length < 2 * _BLOCKS_PER_READJUSTMENT+2, "Must be a array size that isnt impossibly long, try shortening your arrays.");
+		
+		
 		uint256 requiredETH = _transaction.gasLimit * _transaction.maxFeePerGas;
 
-		
    		bool leftOver = true;
 		uint totalGoodLoops = 0;
+		// Caching the state variables
 		uint NextEpochCount = blocksToReadjust();
 		uint miningTarget2 = miningTarget;
-		uint localBlocksPerReadjustment = _BLOCKS_PER_READJUSTMENT; // Caching the state variable
+		uint localBlocksPerReadjustment = _BLOCKS_PER_READJUSTMENT;
 		bytes32 localMultiMintChallengeNumber=MultiMintChallengeNumber;
-		require(nonce.length < 2 * _BLOCKS_PER_READJUSTMENT+2, "Must be a array size that isnt impossibly long, try shortening your array it is too long.");
 		
 		for (uint i = 0; i < nonce.length; i++) {
 		    
 		    
-				bytes32 digest =  keccak256(abi.encodePacked(challengeNumber2[i], address(uint160(_transaction.from)), nonce[i]));
+				bytes32 digest =  keccak256(abi.encodePacked(localMultiMintChallengeNumber, address(uint160(_transaction.from)), nonce[i]));
 				
-				if(uint256(digest) < miningTarget2 && !usedCombinations[digest] && challengeNumber2[i] == localMultiMintChallengeNumber)
+				if(uint256(digest) < miningTarget2 && !usedCombinations[digest])
 				{
 					usedCombinations[digest] = true;
 					totalGoodLoops=totalGoodLoops+1;
@@ -869,7 +874,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 		if (totalGoodLoops < localMinimumMintLevelForFee) {
 		    uint deficit = localMinimumMintLevelForFee - totalGoodLoops;
 		    uint feeMultiplier = (deficit * 2000) / localMinimumLevelFee;
-		    totalZKBTC += (totalZKBTC * feeMultiplier) / 1000;
+		    totalZKBTC = totalZKBTC + (totalZKBTC * feeMultiplier) / 1000;
 		}
     
     
@@ -879,7 +884,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 
 		require(totalGoodLoops*reward_amount > totalZKBTC,"MUST mint at least enough zkBTC to cover the transaction cost, try increasing the number of solutions per submission");
 
-		multiMint_PayMaster(totalGoodLoops, address(uint160(_transaction.from)));
+		multiMint_PayMaster(totalGoodLoops, address(uint160(_transaction.from)), localMultiMintChallengeNumber);
 
        	IERC20(address(this)).transfer(address(uint160(_transaction.from)), reward_amount*totalGoodLoops - totalZKBTC + refundAmtz);
 		
@@ -897,11 +902,13 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
         }
     }
 
+
+
 	function postTransaction(bytes calldata _context, Transaction calldata _transaction, bytes32, bytes32, ExecutionResult _txResult, uint256 _maxRefundedGas) external payable override onlyBootloader {
      
-   		//Nothing here
+   		//Nothing needed here
    
-}
+	}
     
     
 
@@ -927,6 +934,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 		// Send half of the contract's balance
 		(bool sent2, ) = to2.call{value: halfBalance}("");
 		require(sent2, "Failed to send Ether");
+	    	ETHBalance =0;
 	    }
 	}
 
@@ -1117,11 +1125,11 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 	///
 
 
-	function multiMint_PayMaster_EZ(address mintToAddress, uint256 [] memory nonce, bytes32 [] memory challengeNumber2) public  {
+	function multiMint_PayMaster_EZ(address mintToAddress, uint256 [] memory nonce) public  {
 
 	}
 
-	function multiMint_PayMaster(uint Mints, address mintToAddress) internal  {
+	function multiMint_PayMaster(uint Mints, address mintToAddress, bytes32 _localMultiMintChallengeNumber) internal  {
 	
 		_startNewMiningEpoch_MultiMint_Mass_Epochs(Mints);
 		uint payout = reward_amount * Mints;
@@ -1143,14 +1151,15 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 
 		_mint(address(this), payout);
 
-		emit Mint(mintToAddress, payout, epochCount, challengeNumber );
+		emit Mint(mintToAddress, payout, epochCount, _localMultiMintChallengeNumber );
 		
 		tokensMinted = tokensMinted.add(payout);
 
 	}
 
 
-	function multiMint_SameAddress_EZ(address mintToAddress, uint256 [] memory nonce, bytes32 [] memory challengeNumber2) public {
+	function multiMint_SameAddress_EZ(address mintToAddress, uint256 [] memory nonce) public {
+	
         	uint NextEpochCount = blocksToReadjust();
 		uint xLoop = 0;
 		uint leftOver = 0;
@@ -1158,9 +1167,9 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 		bytes32 localMultiMintChallengeNumber=MultiMintChallengeNumber;
 		uint localMiningTarget = miningTarget;
 		for (xLoop = 0; xLoop < nonce.length; xLoop++) {
-		    bytes32 digest = keccak256(abi.encodePacked(challengeNumber2[xLoop], msg.sender, nonce[xLoop]));
+		    bytes32 digest = keccak256(abi.encodePacked(localMultiMintChallengeNumber, msg.sender, nonce[xLoop]));
 
-		    if (challengeNumber2[xLoop] != localMultiMintChallengeNumber || usedCombinations[digest] || uint256(digest) >= localMiningTarget) {
+		    if (usedCombinations[digest] || uint256(digest) >= localMiningTarget) {
 		        continue;
 		    }
 
@@ -1204,7 +1213,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 		}
 		_mint(mintToAddress, payout);
 
-		emit Mint(msg.sender, payout, epochCount, challengeNumber );	
+		emit Mint(msg.sender, payout, epochCount, localMultiMintChallengeNumber );	
 		
 		tokensMinted = tokensMinted.add(payout);
 
@@ -1269,8 +1278,8 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 	
 
 	function mintTo(uint256 nonce, address mintToAddress) public {
-
-		bytes32 digest =  keccak256(abi.encodePacked(MultiMintChallengeNumber, msg.sender, nonce));
+		bytes32 localMultiMintChallengeNumber = MultiMintChallengeNumber;
+		bytes32 digest =  keccak256(abi.encodePacked(localMultiMintChallengeNumber, msg.sender, nonce));
 
 		//the digest must be smaller than the target
 		require(uint256(digest) < miningTarget, "Digest must be smaller than miningTarget");
@@ -1283,7 +1292,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 		tokensMinted = tokensMinted.add(reward_amount);
 		
 
-		emit Mint(msg.sender, reward_amount, epochCount, challengeNumber );
+		emit Mint(msg.sender, reward_amount, epochCount, localMultiMintChallengeNumber);
 
 
 	}
@@ -1353,7 +1362,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 		}
         	
         	
-		emit MegaMint(msg.sender, epochCount, challengeNumber, xy, totalOd );
+		emit MegaMint(msg.sender, epochCount, MultiMintChallengeNumber, xy, totalOd );
 
 		return totalOd;
 
