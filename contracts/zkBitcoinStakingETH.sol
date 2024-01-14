@@ -319,6 +319,10 @@ contract zkBitcoinStakingETH is StakedTokenWrapper, Ownable2 {
 	    }else if(poolLength < poolLength2){
 		poolLength = poolLength2;
 	    }
+	    
+	    if(poolLength > 222*24*60*60){
+	    		poolLength = 222*24*60*60;
+	    	}
         return true;
 	}
 

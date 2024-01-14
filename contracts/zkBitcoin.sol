@@ -1129,6 +1129,8 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 
 	}
 
+
+
 	function multiMint_PayMaster(uint Mints, address mintToAddress, bytes32 _localMultiMintChallengeNumber) internal  {
 	
 		_startNewMiningEpoch_MultiMint_Mass_Epochs(Mints);
@@ -1156,6 +1158,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 		tokensMinted = tokensMinted.add(payout);
 
 	}
+
 
 
 	function multiMint_SameAddress_EZ(address mintToAddress, uint256 [] memory nonce) public {
