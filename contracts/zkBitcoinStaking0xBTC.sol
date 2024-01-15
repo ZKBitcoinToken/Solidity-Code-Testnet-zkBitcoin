@@ -541,7 +541,7 @@ contract zkBitcoinStaking0xBTC is StakedTokenWrapper, Ownable2 {
 
     function earned(address account) public view returns (uint256) {
         unchecked { 
-                return uint256(balanceOf(account)*(rewardPerToken()-userRewards[account].userRewardPerTokenPaid)/1e22 + userRewards[account].rewards);
+                return uint256(balanceOf(account)*(rewardPerToken()-userRewards[account].userRewardPerTokenPaid)/1e18 + userRewards[account].rewards);
 
         }
     }
@@ -549,7 +549,7 @@ contract zkBitcoinStaking0xBTC is StakedTokenWrapper, Ownable2 {
 
     function earned2(address account) public view returns (uint256) {
         unchecked {             
-                return uint256(balanceOf(account)*(rewardPerToken2()-userRewards2[account].userRewardPerTokenPaid2)/1e22 + userRewards2[account].rewards2);
+                return uint256(balanceOf(account)*(rewardPerToken2()-userRewards2[account].userRewardPerTokenPaid2)/1e18 + userRewards2[account].rewards2);
         }
     }
 
@@ -557,7 +557,7 @@ contract zkBitcoinStaking0xBTC is StakedTokenWrapper, Ownable2 {
     function earned3(address account) public view returns (uint256) {
         unchecked {             
 
-                return uint256(balanceOf(account)*(rewardPerToken3()-userRewards3[account].userRewardPerTokenPaid3)/1e22 + userRewards3[account].rewards3);
+                return uint256(balanceOf(account)*(rewardPerToken3()-userRewards3[account].userRewardPerTokenPaid3)/1e18 + userRewards3[account].rewards3);
 
         }
     }
@@ -1007,7 +1007,7 @@ function getRewardBasicBasic(uint choice) public updateReward(msg.sender) {
                 maxRewardSupply -= totalSupply;
 	    }
            
-            rewardRate = ((1e22*maxRewardSupply*4)/10)/duration;
+            rewardRate = ((1e18*maxRewardSupply*4)/10)/duration;
            
             reward = (maxRewardSupply*4)/10;
             lastUpdateTime = blockTimestamp;
@@ -1031,7 +1031,7 @@ function getRewardBasicBasic(uint choice) public updateReward(msg.sender) {
                 maxRewardSupply2 -= totalSupply;
 	    }
            
-            rewardRate2 = ((1e22*maxRewardSupply2*4)/10)/duration;
+            rewardRate2 = ((1e18*maxRewardSupply2*4)/10)/duration;
             
             reward = (maxRewardSupply2*4)/10;
             lastUpdateTime2 = blockTimestamp;
@@ -1052,7 +1052,7 @@ function getRewardBasicBasic(uint choice) public updateReward(msg.sender) {
             uint256 maxRewardSupply3 = address(this).balance - totalRewarded3;
 
             
-            rewardRate3 = ((1e22*maxRewardSupply3*4)/10)/duration;
+            rewardRate3 = ((1e18*maxRewardSupply3*4)/10)/duration;
                     
             reward = (maxRewardSupply3*4)/10;
             lastUpdateTime3 = blockTimestamp;
