@@ -263,6 +263,7 @@ contract zkBitcoinStaking0xBTC is StakedTokenWrapper, Ownable2 {
         uint256 rewardsExtraExtra3;
     }
 	
+    mapping(address => uint) public lastRewardForAtTime;
     mapping(address => UserRewards) public userRewards;
     mapping(address => UserRewards2) public userRewards2;
     mapping(address => UserRewards3) public userRewards3;
@@ -318,8 +319,8 @@ contract zkBitcoinStaking0xBTC is StakedTokenWrapper, Ownable2 {
 	    }else if(poolLength < poolLength2){
 		poolLength = poolLength2;
 	    }
-	    if(poolLength > 222*24*60*60){
-	    		poolLength = 222*24*60*60;
+	    if(poolLength > 240*24*60*60){
+	    		poolLength = 240*24*60*60;
 	    	}
         return true;
 	}
@@ -464,7 +465,7 @@ contract zkBitcoinStaking0xBTC is StakedTokenWrapper, Ownable2 {
         }
         unchecked {
             uint256 rewardDuration = lastTimeRewardApplicable()-lastUpdateTime;
-            return uint256(rewardPerTokenStored + rewardDuration*rewardRate*(1e22)/totalStakedSupply);
+            return uint256(rewardPerTokenStored + rewardDuration*rewardRate/totalStakedSupply);
         }
     }
 
@@ -476,7 +477,7 @@ contract zkBitcoinStaking0xBTC is StakedTokenWrapper, Ownable2 {
         }
         unchecked {
             uint256 rewardDuration2 = lastTimeRewardApplicable2()-lastUpdateTime2;
-            return uint256(rewardPerTokenStored2 + rewardDuration2*rewardRate2*1e22/totalStakedSupply);
+            return uint256(rewardPerTokenStored2 + rewardDuration2*rewardRate2/totalStakedSupply);
         }
     }
 
@@ -488,7 +489,7 @@ contract zkBitcoinStaking0xBTC is StakedTokenWrapper, Ownable2 {
         }
         unchecked {
             uint256 rewardDuration3 = lastTimeRewardApplicable3()-lastUpdateTime3;
-            return uint256(rewardPerTokenStored3 + rewardDuration3*rewardRate3*1e22/totalStakedSupply);
+            return uint256(rewardPerTokenStored3 + rewardDuration3*rewardRate3/totalStakedSupply);
         }
     }
 
@@ -500,7 +501,7 @@ contract zkBitcoinStaking0xBTC is StakedTokenWrapper, Ownable2 {
         }
         unchecked {
             uint256 rewardDurationExtra = lastTimeRewardApplicableExtra()-lastUpdateTimeExtra;
-            return uint256(rewardPerTokenStoredExtra + rewardDurationExtra*rewardRateExtra*(10**uint(decimalsExtra))/totalStakedSupply);
+            return uint256(rewardPerTokenStoredExtra + rewardDurationExtra*rewardRateExtra/totalStakedSupply);
         }
     }
 	
@@ -512,7 +513,7 @@ contract zkBitcoinStaking0xBTC is StakedTokenWrapper, Ownable2 {
         }
         unchecked {
             uint256 rewardDurationExtraExtra = lastTimeRewardApplicableExtraExtra()-lastUpdateTimeExtraExtra;
-            return uint256(rewardPerTokenStoredExtraExtra + rewardDurationExtraExtra*rewardRateExtraExtra*(10**uint(decimalsExtraExtra))/totalStakedSupply);
+            return uint256(rewardPerTokenStoredExtraExtra + rewardDurationExtraExtra*rewardRateExtraExtra/totalStakedSupply);
         }
     }
 
@@ -523,7 +524,7 @@ contract zkBitcoinStaking0xBTC is StakedTokenWrapper, Ownable2 {
         }
         unchecked {
             uint256 rewardDurationExtraExtra2 = lastTimeRewardApplicableExtraExtra2()-lastUpdateTimeExtraExtra2;
-            return uint256(rewardPerTokenStoredExtraExtra2 + rewardDurationExtraExtra2*rewardRateExtraExtra2*(10**uint(decimalsExtraExtra2))/totalStakedSupply);
+            return uint256(rewardPerTokenStoredExtraExtra2 + rewardDurationExtraExtra2*rewardRateExtraExtra2/totalStakedSupply);
         }
     }
 
@@ -534,7 +535,7 @@ contract zkBitcoinStaking0xBTC is StakedTokenWrapper, Ownable2 {
         }
         unchecked {
             uint256 rewardDurationExtraExtra3 = lastTimeRewardApplicableExtraExtra3()-lastUpdateTimeExtraExtra3;
-            return uint256(rewardPerTokenStoredExtraExtra3 + rewardDurationExtraExtra3*rewardRateExtraExtra3*(10**uint(decimalsExtraExtra3))/totalStakedSupply);
+            return uint256(rewardPerTokenStoredExtraExtra3 + rewardDurationExtraExtra3*rewardRateExtraExtra3/totalStakedSupply);
         }
     }
 
@@ -795,6 +796,8 @@ function getRewardBasicBasic(uint choice) public updateReward(msg.sender) {
     }
 
     function getRewardFor(address forWhom) public updateReward(forWhom) {
+     	require(lastRewardForAtTime[forWhom] + poolLength/2 >= block.timestamp, "Only allowed to withdraw twice per reward period for another user");
+    	lastRewardForAtTime[forWhom] = block.timestamp;
         uint256 reward = earned(forWhom);
         uint256 reward2 = earned2(forWhom);
         uint256 reward3= earned3(forWhom);
@@ -853,96 +856,6 @@ function getRewardBasicBasic(uint choice) public updateReward(msg.sender) {
 
 
 
-    //0 = Reward1 and Reward2, 1 = Reward1, 2 = Reward2, 3 = Reward3, 4 = RewardExtra, 5 = RewardExtraExtra
-    function getRewardBasicBasicFor(address forWhom, uint choice) public updateReward(forWhom) {
-        //Reward & Reward2 aka 1 and 2
-        if(choice == 0){
-	    uint256 reward = earned(forWhom);
-            uint256 reward2 = earned2(forWhom);
-            if (reward > 0) {
-            	userRewards[forWhom].rewards = 0;
-           	 require(rewardToken.transfer(forWhom, reward), "reward transfer failed");
-            	totalRewarded = totalRewarded - reward;
-            }
-            if(reward2 > 0){
-                userRewards2[forWhom].rewards2 = 0;
-                require(rewardToken2.transfer(forWhom, reward2), "reward token 2 transfer failed");
-                totalRewarded2 = totalRewarded2 - reward2;
-            }
-           emit RewardPaidBasic(forWhom, reward, reward2);
-		   
-        }else if(choice == 2){
-            uint256 reward2 = earned2(forWhom);
-            if(reward2 > 0){
-               userRewards2[forWhom].rewards2 = 0;
-              require(rewardToken2.transfer(forWhom, reward2), "reward token 2 transfer failed");
-               totalRewarded2 = totalRewarded2 - reward2;
-           }
-           emit RewardPaidBasic(forWhom, 0, reward2);
-		   
-        }else if(choice == 1){
-	    uint256 reward = earned(forWhom);
-            if (reward > 0){
-               userRewards[forWhom].rewards = 0;
-               require(rewardToken.transfer(forWhom, reward), "reward transfer failed");
-               totalRewarded = totalRewarded - reward;
-            }
-	    emit RewardPaidBasic(forWhom, reward, 0);
-			
-        }else if(choice == 3){
-	    uint256 reward3= earned3(forWhom);
-	    if(reward3 > 0){
-		userRewards3[forWhom].rewards3 = 0;
-        	forWhom.call{value: reward3}("");
-		totalRewarded3 = totalRewarded3 - reward3;
-	    }
-	    emit RewardPaid3(forWhom, reward3);
-
-        }else if(choice == 4){
-            uint256 rewardExtra = earnedExtra(forWhom);
-            if (rewardExtra > 0){
-                userRewardsExtra[forWhom].rewardsExtra = 0;
-                require(rewardTokenExtra.transfer(forWhom, rewardExtra), "reward transfer failed");
-               totalRewardedExtra = totalRewardedExtra - rewardExtra;
-       	    }
-            emit RewardPaidExtra(forWhom, rewardExtra);
-			
-        }else if(choice == 5){
-            uint256 rewardExtraExtra = earnedExtraExtra(forWhom);
-            if(rewardExtraExtra > 0)
-            {
-            	userRewardsExtraExtra[forWhom].rewardsExtraExtra = 0;
-                require(rewardTokenExtraExtra.transfer(forWhom, rewardExtraExtra), "reward rewardExtraExtra transfer failed");
-                totalRewardedExtraExtra = totalRewardedExtraExtra - rewardExtraExtra;
-            }
-            emit RewardPaidExtraExtra(forWhom, rewardExtraExtra);
-	    
-        }else if(choice == 6){
-            uint256 rewardExtraExtra2 = earnedExtraExtra2(forWhom);
-            if(rewardExtraExtra2 > 0)
-            {
-            	userRewardsExtraExtra2[forWhom].rewardsExtraExtra2 = 0;
-                require(rewardTokenExtraExtra2.transfer(forWhom, rewardExtraExtra2), "reward rewardExtraExtra2 transfer failed");
-                totalRewardedExtraExtra2 = totalRewardedExtraExtra2 - rewardExtraExtra2;
-            }
-            emit RewardPaidExtraExtra2(forWhom, rewardExtraExtra2);
-			
-        }else if(choice == 7){
-            uint256 rewardExtraExtra3 = earnedExtraExtra3(forWhom);
-            if(rewardExtraExtra3 > 0)
-            {
-            	userRewardsExtraExtra3[forWhom].rewardsExtraExtra3 = 0;
-                require(rewardTokenExtraExtra3.transfer(forWhom, rewardExtraExtra3), "reward rewardExtraExtra3 transfer failed");
-                totalRewardedExtraExtra3 = totalRewardedExtraExtra3 - rewardExtraExtra3;
-            }
-            emit RewardPaidExtraExtra3(forWhom, rewardExtraExtra3);
-			
-        }
-    }
-
- 
-
-
 
 
     function Z_setRewardParamsExtraExtra2(uint256 reward, uint64 duration) external {
@@ -958,13 +871,9 @@ function getRewardBasicBasic(uint choice) public updateReward(msg.sender) {
             if(rewardTokenExtraExtra2 == stakedToken){
                 maxRewardSupply -= totalSupply;
 	    }
-            if(maxRewardSupply > duration)
-            {
-                rewardRateExtraExtra2 = ((maxRewardSupply*4)/10)/duration;
-            }
-            else{
-                rewardRateExtraExtra2 = 0;
-            }
+                       
+            rewardRateExtraExtra2 = ((maxRewardSupply*4*(10**uint(decimalsExtraExtra2)))/10)/duration;
+                       
             reward = (maxRewardSupply*4)/10;
 
             lastUpdateTimeExtraExtra2 = blockTimestamp;
@@ -989,13 +898,9 @@ function getRewardBasicBasic(uint choice) public updateReward(msg.sender) {
             if(rewardTokenExtraExtra3 == stakedToken){
                 maxRewardSupply -= totalSupply;
 	    }
-            if(maxRewardSupply > duration)
-            {
-                rewardRateExtraExtra3 = ((maxRewardSupply*4)/10)/duration;
-            }
-            else{
-                rewardRateExtraExtra3 = 0;
-            }
+            
+            rewardRateExtraExtra3 = ((maxRewardSupply*4*(10**uint(decimalsExtraExtra3)))/10)/duration;
+          
             reward = (maxRewardSupply*4)/10;
 
             lastUpdateTimeExtraExtra3 = blockTimestamp;
@@ -1020,13 +925,9 @@ function getRewardBasicBasic(uint choice) public updateReward(msg.sender) {
             if(rewardTokenExtraExtra == stakedToken){
                 maxRewardSupply -= totalSupply;
 	    }
-            if(maxRewardSupply > duration)
-            {
-                rewardRateExtraExtra = ((maxRewardSupply*4)/10)/duration;
-            }
-            else{
-                rewardRateExtraExtra = 0;
-            }
+            
+            rewardRateExtraExtra = ((maxRewardSupply*4*(10**uint(decimalsExtraExtra)))/10)/duration;
+          
             reward = (maxRewardSupply*4)/10;
 
             lastUpdateTimeExtraExtra = blockTimestamp;
@@ -1052,13 +953,9 @@ function getRewardBasicBasic(uint choice) public updateReward(msg.sender) {
             if(rewardTokenExtra == stakedToken){
                 maxRewardSupply -= totalSupply;
 	    }
-            if(maxRewardSupply > duration)
-            {
-                rewardRateExtra = (maxRewardSupply*4)/duration/10;
-            }
-            else{
-                rewardRateExtra = 0;
-            }
+           
+            rewardRateExtra = ((maxRewardSupply*4*(10**uint(decimalsExtra)))/10)/duration;
+          
             reward = (maxRewardSupply*4)/10;
             lastUpdateTimeExtra = blockTimestamp;
             periodFinishExtra = blockTimestamp+duration;
@@ -1109,14 +1006,9 @@ function getRewardBasicBasic(uint choice) public updateReward(msg.sender) {
             if(rewardToken == stakedToken){
                 maxRewardSupply -= totalSupply;
 	    }
-            if(maxRewardSupply > 3)
-            {
-                rewardRate = ((maxRewardSupply*4)/10)/duration ;
-            }
-            else{
-                rewardRate = 0;
-            }
-            
+           
+            rewardRate = ((1e22*maxRewardSupply*4)/10)/duration;
+           
             reward = (maxRewardSupply*4)/10;
             lastUpdateTime = blockTimestamp;
             periodFinish = blockTimestamp+duration;
@@ -1138,13 +1030,9 @@ function getRewardBasicBasic(uint choice) public updateReward(msg.sender) {
             if(rewardToken2 == stakedToken){
                 maxRewardSupply2 -= totalSupply;
 	    }
-            if(maxRewardSupply2 > reward)
-            {
-                rewardRate2 = ((maxRewardSupply2*4)/10)/duration;
-            }
-            else{
-                rewardRate2 = 0;
-            }
+           
+            rewardRate2 = ((1e22*maxRewardSupply2*4)/10)/duration;
+            
             reward = (maxRewardSupply2*4)/10;
             lastUpdateTime2 = blockTimestamp;
             periodFinish2 = blockTimestamp+duration;
@@ -1163,13 +1051,9 @@ function getRewardBasicBasic(uint choice) public updateReward(msg.sender) {
             require(blockTimestamp > periodFinish3, "MUST BE AFTER Previous Rewards");
             uint256 maxRewardSupply3 = address(this).balance - totalRewarded3;
 
-            if(maxRewardSupply3 > duration)
-            {
-                rewardRate3 = ((maxRewardSupply3*4)/10)/duration;
-            }
-            else{
-                rewardRate3 = 0;
-            }            
+            
+            rewardRate3 = ((1e22*maxRewardSupply3*4)/10)/duration;
+                    
             reward = (maxRewardSupply3*4)/10;
             lastUpdateTime3 = blockTimestamp;
             periodFinish3 = blockTimestamp+duration;

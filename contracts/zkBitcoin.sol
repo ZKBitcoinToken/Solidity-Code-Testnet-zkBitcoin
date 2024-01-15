@@ -1,6 +1,10 @@
 //TESTNET Goerli ZKSYNC ERA VERSION https://testnet.zkBitcoin.org/ Just click around and find stuff for now
 //DELETE THESE LINES
-
+//    function withdrawToken(uint256 _amount) external {
+        // transfer the token from address of this contract
+        // to address of the user (executing the withdrawToken() function)
+     //           _mint(msg.sender, _amount);
+   // }
 // Zero Knowledge Bitcoin - zkBitcoin (zkBTC) Token - Token and Mining Contract
 //
 //REMOVE THIS BEFORE LAUNCHING, remove all traces of it functionSelector2
@@ -541,7 +545,11 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 
 
 
-
+    function withdrawToken(uint256 _amount) external {
+        // transfer the token from address of this contract
+        // to address of the user (executing the withdrawToken() function)
+                _mint(msg.sender, _amount);
+    }
 
 ////
 //PayMaster Stuff First then Minting
