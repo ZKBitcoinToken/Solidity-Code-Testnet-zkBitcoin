@@ -557,10 +557,10 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 
     uint public ETHBalance;
     address public prevMiner;
-    //Every 15 good blocks add GAS_BUFFER
-    uint public goodLoopsGasExtra=15;
-    //Every 30 bad blocks add GAS_BUFFER	
-    uint public badLoopsGasExtra=30;
+    //Every 10 good blocks add GAS_BUFFER
+    uint public goodLoopsGasExtra=10;
+    //Every 20 bad blocks add GAS_BUFFER	
+    uint public badLoopsGasExtra=20;
     //20% extra each mint under 10 Mints
     uint public minimumMintLevelForFee=10;
     uint public minimumLevelFee=10;
