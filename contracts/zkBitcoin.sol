@@ -570,7 +570,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 
     address public constant WETH = 0x20b28B1e4665FFf290650586ad76E977EAb90c5D; // Wrapped ETH address
     address public pairAddress = 0xff89102328Da98c50F8D60998EEb2d7fD470Bc92;
-    uint256 public GAS_BUFFER = 55000; // This is the buffer amount
+    uint256 public GAS_BUFFER = 30000; // This is the buffer amount
 
 
     
