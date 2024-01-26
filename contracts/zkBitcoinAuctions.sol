@@ -1,4 +1,6 @@
-//  Zero Knowledge Bitcoin Token - zkBitcoin (zkBTC) Token - Auctions Contract
+// secondsPerDay = 10; //10 * 60 * 60 * 24; //start out at 10 days avg
+//MUST CHANGE SECONDSPERDAY TO 10 days before launch, testnet only  
+//Zero Knowledge Bitcoin Token - zkBitcoin (zkBTC) Token - Auctions Contract
 //
 //  Website: https://zkBitcoin.org
 //  Auctions dAPP: https://zkBitcoin.org/dapp/auctions/
@@ -36,6 +38,7 @@ contract Ownabled {
         require(msg.sender == owner22, "only owner");
         _;
     }
+    
     function setOwner(address _owner22) internal onlyOwner22 {
         emit TransferOwnership(owner22, _owner22);
         owner22 = _owner22;
@@ -168,6 +171,9 @@ interface IERC20 {
 contract zkBTCMining{
     function getMiningMinted() public view returns (uint256) {}
     function startTime() external view returns (uint){}
+     function balanceOf(address ) external view returns (uint256){}
+    function transferFrom(address , address , uint256 ) external returns (bool) {}
+
     }
 
   contract zkBitcoinAuctions is Ownabled
@@ -194,8 +200,9 @@ contract zkBTCMining{
     uint public daysPerEra; uint public secondsPerDay;
     uint public nextDayTime;
     uint public totalBurnt; uint public totalEmitted;
+    // Paymaster variables
+    uint payMasterExtra=0;
     // Public Mappings
-    
     mapping(uint=>uint) public mapEra_Emission;                                             // Era->Emission
     mapping(uint=>mapping(uint=>uint)) public mapEraDay_MemberCount;                        // Era,Days->MemberCount
     mapping(uint=>mapping(uint=>address[])) public mapEraDay_Members;                       // Era,Days->Members
@@ -224,9 +231,9 @@ contract zkBTCMining{
     // Constructor
     constructor () {
         name = "zkBitcoin Auctions Contract"; decimals = 18; 
-        coin = 10**decimals; emission = 2048*coin;
+        coin = 10**decimals; emission = 16*2048*coin;
         currentEra = 1; currentDay = 1; 
-        daysPerEra = 150; secondsPerDay = 15 * 60 * 60 * 24; //start out at 15 days avg
+        daysPerEra = 150; secondsPerDay = 10; //10 * 60 * 60 * 24; //start out at 10 days avg
         totalBurnt = 0;
         totalEmitted = 0;
         nextDayTime = block.timestamp + secondsPerDay * 10000;
@@ -238,6 +245,12 @@ contract zkBTCMining{
     
     
 
+
+        function transfer_zkBTC_from_THEM_to_auctions(uint amt) public {
+        	zkBTCMiningToken.transferFrom(msg.sender, address(this), amt);
+                payMasterExtra = payMasterExtra+amt;
+    	}
+    	
 
         function zSetUP1(address token) public onlyOwner22 {
             require(!inited, "Must only run once");
@@ -258,7 +271,7 @@ contract zkBTCMining{
         uint tokensMinted = zkBTCMiningToken.getMiningMinted();
       
         uint diff = tokensMinted - lastMinted;
-        uint expected = emission.mult(8*412).div(100);
+        uint expected = emission.mult(212).div(100);
         if(diff != 0){
             if( diff < expected )
             {
@@ -435,6 +448,13 @@ contract zkBTCMining{
     }
     
     
+    //Gets current auction amount
+    function zkBTC_Auction_Amount() public view returns (uint){
+     	return mapEraDay_EmissionRemaining[currentEra][currentDay];
+    }
+    
+    
+    
     //Super easy auction redeeming
     function WithdrawEasiest() public
     {
@@ -535,7 +555,7 @@ contract zkBTCMining{
             } 
         }
     
-        return stricttotal*16;
+        return stricttotal;
     }
 
     
@@ -626,11 +646,11 @@ contract zkBTCMining{
             mapEraDay_MemberUnits[_era][_day][_member] = 0;                                 // Set to 0 since it will be withdrawn
             mapEraDay_UnitsRemaining[_era][_day] = mapEraDay_UnitsRemaining[_era][_day].sub(memberUnits);  // Decrement Member Units
             mapEraDay_EmissionRemaining[_era][_day] = mapEraDay_EmissionRemaining[_era][_day].sub(value);  // Decrement emission
-            totalEmitted += value*16;
+            totalEmitted += value;
             //We emit all in one transfer.   
         }
         
-        return value*16;
+        return value;
         
     }
     
@@ -644,13 +664,13 @@ contract zkBTCMining{
             mapEraDay_MemberUnits[_era][_day][_member] = 0;                                 // Set to 0 since it will be withdrawn
             mapEraDay_UnitsRemaining[_era][_day] = mapEraDay_UnitsRemaining[_era][_day].sub(memberUnits);  // Decrement Member Units
             mapEraDay_EmissionRemaining[_era][_day] = mapEraDay_EmissionRemaining[_era][_day].sub(value);  // Decrement emission
-            totalEmitted += value*16;            
-            emit Withdrawal(msg.sender, _member, _era, _day, value*16, mapEraDay_EmissionRemaining[_era][_day]);
+            totalEmitted += value;            
+            emit Withdrawal(msg.sender, _member, _era, _day, value, mapEraDay_EmissionRemaining[_era][_day]);
             // ERC20 transfer function
-            IERC20(AddressZKBitcoin).transfer(_member, value*16); // 8,192 tokens a auction aka almost half the supply an era!
+            IERC20(AddressZKBitcoin).transfer(_member, value); // 8,192 tokens a auction aka almost half the supply an era!
         }
         
-        return value*16;
+        return value;
         
     }
     
@@ -688,10 +708,11 @@ contract zkBTCMining{
             currentDay += 1;                                                                // Increment Day
             nextDayTime = _now + secondsPerDay;                                             // Set next Day time
          
-            emission = getDayEmission();  
-            totalAuctioned = totalAuctioned + emission*16;
+            emission = getDayEmission(); 
+            totalAuctioned = totalAuctioned + emission+payMasterExtra;
             // Check daily Dmission
-            mapEraDay_EmissionRemaining[currentEra][currentDay] = emission;                 // Map emission to Day
+            mapEraDay_EmissionRemaining[currentEra][currentDay] = emission+payMasterExtra;                 // Map emission to Day
+            payMasterExtra=0;
             uint _era = currentEra; uint _day = currentDay-1;
             if(currentDay == 1){ _era = currentEra-1; _day = daysPerEra; }                  // Handle New Era
             emit NewDay(currentEra, currentDay, nextDayTime, 
@@ -720,7 +741,7 @@ contract zkBTCMining{
     // Calculate Day emission
     function getDayEmission() public view returns (uint) {
         uint balance = (totalEmitted + IERC20(AddressZKBitcoin).balanceOf(address(this))) - totalAuctioned;                                     // Find remaining balance
-        if (balance > emission*16) {                                                           // Balance is sufficient
+        if (balance > emission) {                                                           // Balance is sufficient
             return emission;                                                                // Return emission
         } else {                                                                            // Balance has dropped low
             return balance/3;                                                                 // Return full balance

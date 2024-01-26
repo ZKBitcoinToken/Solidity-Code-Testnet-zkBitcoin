@@ -302,14 +302,13 @@ contract zkBitcoinStaking0xBTC is StakedTokenWrapper, Ownable2 {
     }
 
 
+
+
     function NewRewardTime() public returns (bool success){
 	    uint64 poolLength2 = uint64(AuctionCT.secondsPerDay());
 	    uint _era = AuctionCT.currentEra();
 	    if(_era < 2 ){
 	    	poolLength = (poolLength2*5);
-	    	if(poolLength < 40*24*60*60){
-	    		poolLength = 40*24*60*60;
-	    	}
 	    }else if(_era < 3 ){
 	    	poolLength = (poolLength2*5);
 	    }else if(_era < 5){
@@ -320,8 +319,11 @@ contract zkBitcoinStaking0xBTC is StakedTokenWrapper, Ownable2 {
 		poolLength = poolLength2;
 	    }
 	    if(poolLength > 240*24*60*60){
-	    		poolLength = 240*24*60*60;
+	    		poolLength = 200*24*60*60;
 	    	}
+	    if(poolLength < 40*24*60*60){
+	    		poolLength = 40*24*60*60;
+	    }
         return true;
 	}
 

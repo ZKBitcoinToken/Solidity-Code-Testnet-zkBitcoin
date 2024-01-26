@@ -308,9 +308,6 @@ contract zkBitcoinStakingETH is StakedTokenWrapper, Ownable2 {
 	    uint _era = AuctionCT.currentEra();
 	    if(_era < 2 ){
 	    	poolLength = (poolLength2*5);
-	    	if(poolLength < 40*24*60*60){
-	    		poolLength = 40*24*60*60;
-	    	}
 	    }else if(_era < 3 ){
 	    	poolLength = (poolLength2*5);
 	    }else if(_era < 5){
@@ -323,6 +320,9 @@ contract zkBitcoinStakingETH is StakedTokenWrapper, Ownable2 {
 	    if(poolLength > 240*24*60*60){
 	    		poolLength = 200*24*60*60;
 	    	}
+	    if(poolLength < 40*24*60*60){
+	    		poolLength = 40*24*60*60;
+	    }
         return true;
 	}
 
