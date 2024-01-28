@@ -1024,7 +1024,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
     event Mint(address indexed from, uint reward_amount, uint epochCount, bytes32 newChallengeNumber);
     event MegaMint(address indexed from, uint epochCount, bytes32 newChallengeNumber, uint NumberOfTokensMinted, uint256 TokenMultipler);
 
-    // This mapping can be used to store combinations of nonce, challenge, and user
+    // This mapping can be used to store combinations of challenge, user, and nonce which is the digest
     // to ensure they are not used again.
     mapping(bytes32 => bool) public usedCombinations;
     //ZKBITCOIN INITALIZE Start
@@ -1041,7 +1041,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
     uint public miningTarget = _MAXIMUM_TARGET.div(1);  //1 difficulty to start
   
     bytes32 public challengeNumber = blockhash(block.number - 1); //this is the next first challenge that will be used, challengeNumber is the main challenge to solve for
-	//MultiMintChallengeNumber is the extra challenge to solve if the last mint of challengeNumber.  Then you use this for the extra mints @ next difficulty.
+	//MultiMintChallengeNumber is the extra challenge to solve on the last mint of challengeNumber.  Then you use this for the extra mints @ next difficulty.
     bytes32 public MultiMintChallengeNumber = blockhash(block.number - 2);
     
     mapping(bytes32 => bool) public usedChallenges;
