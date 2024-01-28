@@ -1183,7 +1183,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 		  
 		}
 
-       	_startNewMiningEpoch_MultiMint_Mass_Epochs(GoodLoops - leftOver);
+       		_startNewMiningEpoch_MultiMint_Mass_Epochs(GoodLoops - leftOver);
 
 		uint payout = GoodLoops * reward_amount;
 
