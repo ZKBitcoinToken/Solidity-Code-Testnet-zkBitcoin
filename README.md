@@ -1,2 +1,2 @@
 # Solidity-Code-Testnet-zkBitcoin
-Alpha
+All zkBitcoin solidity code resides here
