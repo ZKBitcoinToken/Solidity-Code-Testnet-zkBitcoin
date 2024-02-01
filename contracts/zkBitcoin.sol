@@ -14,7 +14,6 @@
 		miningTarget=_MAXIMUM_TARGET.div(diff);
 	}
 
-
 //MUST REMOVE BOTH ABOVE FROM CONTRACT
 *///
 // Zero Knowledge Bitcoin - zkBitcoin (zkBTC) Token - Token and Mining and Paymaster Contract
@@ -51,7 +50,7 @@
 //  
 //* 1 token were burned to create the LP pool.
 //
-// Credits: 0xBitcoin, Vether, Synethix, ABAS, Paymaster
+// Credits: 0xBitcoin
 //
 // startTime = 1705510800;  //Date and time (GMT):  Wednesday, January 17, 2024 5:00:00 PM GMT openMining can then be called and mining will have rewards
 
@@ -851,7 +850,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 					
 		        		_startNewMiningEpoch_MultiMint_Mass_Epochs(totalGoodLoops);
 		        		//Max of blocksPerReadjustment/4 into next challenge is possible. So 2048/4 = 512 blocks after difficulty change on getChallengeNumber().
-					NextEpochCount = totalGoodLoops + localBlocksPerReadjustment/4+2;
+					NextEpochCount = totalGoodLoops + localBlocksPerReadjustment/4+3;
 					miningTarget2 = miningTarget;
 					leftOver = totalGoodLoops;
 				
@@ -1016,7 +1015,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 	return IERC1155Receiver.onERC1155Received.selector;
 	}
 	
-    uint public targetTime = 12*60;
+    uint public targetTime = 10*60;
     uint public startTime = 1705510800;
     //Events
     using SafeMath2 for uint256;
@@ -1049,6 +1048,8 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
     uint public maxSupplyForEra = (_totalSupply - _totalSupply.div( 2**(rewardEra + 1)));
     uint public reward_amount = 0;
     
+    bytes32 public NoMintIfNotNewChallenge;
+    bytes32 public NoMintIfNotNewMultiMintChallenge;
     //Stuff for Functions
     uint public previousBlockTime  =  block.timestamp; // Previous Blocktime for ERC20 mintings
     uint public tokensMinted = 0;			//Tokens Minted only for Miners
@@ -1071,6 +1072,8 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 		reward_amount = 50 * 10**18;  //Zero reward for first days to setup miners
 		rewardEra = 0;
 		tokensMinted = 0;
+//MUST CHANGE BACK EPOCHCOUNT TO 0
+//MUST CHANGE BACK EPOCHCOUNT TO 0
 		epochCount = 0;
 		epochOld = 0;
 		latestDifficultyPeriodStarted2 = block.timestamp;
@@ -1147,63 +1150,6 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 	}
 
 
-
-	function multiMint_SameAddress_EZ(address mintToAddress, uint256 [] memory nonce) public {
-	
-        	uint NextEpochCount = blocksToReadjust();
-		uint xLoop = 0;
-		uint leftOver = 0;
-		uint GoodLoops = 0;
-		bytes32 localChallengeNumber=challengeNumber;
-		uint localMiningTarget = miningTarget;
-		for (xLoop = 0; xLoop < nonce.length; xLoop++) {
-		    bytes32 digest = keccak256(abi.encodePacked(localChallengeNumber, msg.sender, nonce[xLoop]));
-
-		    if (usedCombinations[digest] || uint256(digest) >= localMiningTarget) {
-		        continue;
-		    }
-
-		    GoodLoops = GoodLoops.add(1);
-		    
-	            usedCombinations[digest] = true;
-		    if (GoodLoops == NextEpochCount) {
-
-
-			if(leftOver != 0){
-				break;
-			}
-			
-		        localChallengeNumber=MultiMintChallengeNumber;
-		        _startNewMiningEpoch_MultiMint_Mass_Epochs(GoodLoops-leftOver);
-		        localMiningTarget = miningTarget;
-		        NextEpochCount = GoodLoops + _BLOCKS_PER_READJUSTMENT/4;
-			leftOver=GoodLoops;
-		    }
-
-		  
-		}
-
-       		_startNewMiningEpoch_MultiMint_Mass_Epochs(GoodLoops - leftOver);
-
-		uint payout = GoodLoops * reward_amount;
-
-		//if max supply for the era will be exceeded next reward round then enter the new era before that happens
-		//59 is the final reward era, almost all tokens minted
-		if( tokensMinted.add(payout) > maxSupplyForEra && rewardEra < 59)
-		{
-			rewardEra = rewardEra + 1;
-			maxSupplyForEra = _totalSupply - _totalSupply.div( 2**(rewardEra + 1));
-			reward_amount = ( 50 * 10**18)/( 2**(rewardEra) );
-			payout = payout.div(2);
-		}
-		_mint(mintToAddress, payout);
-
-		emit Mint(msg.sender, payout, epochCount, localChallengeNumber );	
-		
-		tokensMinted = tokensMinted.add(payout);
-
-	
-	}
 	
 
 
@@ -1243,7 +1189,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 		        localChallengeNumber=MultiMintChallengeNumber;
 		        _startNewMiningEpoch_MultiMint_Mass_Epochs(GoodLoops-leftOver);
 		        localMiningTarget = miningTarget;
-		        NextEpochCount = GoodLoops + _BLOCKS_PER_READJUSTMENT/4+2; //allow half our answers to come from previous miners, 
+		        NextEpochCount = GoodLoops + _BLOCKS_PER_READJUSTMENT/4+3; //allow half our answers to come from previous miners, 
 			leftOver=GoodLoops;
 		    }
 
@@ -1280,52 +1226,6 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 	
 
 
-	///
-	// NFT Minting
-	///
-
-
-
-	function mintNFTGOBlocksUntil() public view returns (uint num) {
-		return _BLOCKS_PER_READJUSTMENT - (slowBlocks % (_BLOCKS_PER_READJUSTMENT ));
-	}
-	
-
-
-	function mintNFTGO() public view returns (uint num) {
-		return slowBlocks % (_BLOCKS_PER_READJUSTMENT);
-	}
-	
-
-	function mintNFT721(address nftaddy, uint nftNumber, uint256 nonce, bytes32 challenge_digest) public returns (bool success) {
-		require(mintNFTGO() == 0, "Only mint on slowBlocks % _BLOCKS_PER_READJUSTMENT == 0");
-		mintTo(nonce, msg.sender);
-		IERC721(nftaddy).safeTransferFrom(address(this), msg.sender, nftNumber, "");
-		if(mintNFTGO() == 0){
-			slowBlocks = slowBlocks.add(1);
-		}
-		return true;
-	}
-
-
-
-	function mintNFT1155(address nftaddy, uint nftNumber, uint256 nonce, bytes32 challenge_digest) public returns (bool success) {
-		require(mintNFTGO() == 0, "Only mint on slowBlocks % _BLOCKS_PER_READJUSTMENT == 0");
-		mintTo(nonce, msg.sender);
-		IERC1155(nftaddy).safeTransferFrom(address(this), msg.sender, nftNumber, 1, "" );
-		if(mintNFTGO() == 0){
-			slowBlocks = slowBlocks.add(1);
-		}
-		return true;
-	}
-
-
-	///
-	// Single Mint zkBitcoin Minting
-	///
-
-
-
 	//compatibility function
 	function mint(uint256 nonce, bytes32 challenge_digest) public {
 		mintTo(nonce, msg.sender);
@@ -1354,86 +1254,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 	}
 
 
-
-	///
-	// ERC20 Minting
-	///
-
-	function mintTokensArrayTo(uint256 nonce, address[] memory ExtraFunds, address[] memory MintTo) public returns (uint256 owedzz) {
-		uint256 xa = ((block.timestamp - previousBlockTime) * 888) / targetTime;
-		uint ratio = xa * 100 / 888 ;
 	
-		previousBlockTime = block.timestamp;
-		
-		if(ratio > 100){
-			slowBlocks = slowBlocks.add(1);
-		}
-		
-		uint totalOwed = (24*xa*5086060).div(888)+3456750000;
-		//best @ 3000 ratio totalOwed / 100000000 = 71.6
-		if(ratio < 3000){
-			totalOwed = (508606*(15*xa**2)).div(888 ** 2)+ (9943920 * (xa)).div(888);
-		}else {
-			totalOwed = (24*xa*5086060).div(888)+3456750000;
-		}
-		mintTo(nonce, MintTo[0]);
-		uint256 totalOd = totalOwed;
-
-		require(MintTo.length == ExtraFunds.length + 1,"MintTo has to have an extra address compared to ExtraFunds");
-		uint xy=0;
-		for(xy = 0; xy< ExtraFunds.length; xy++)
-		{
-			if(epochCount % (2**(xy+1)) != 0){
-				break;
-			}
-			for(uint y=xy+1; y< ExtraFunds.length; y++){
-				require(ExtraFunds[y] != ExtraFunds[xy], "No printing The same tokens");
-			}
-		}
-		
-		uint TotalOwned = 0;
-		uint totalToSend = 0;
-		for(uint x=0; x<xy; x++)
-		{
-			//epoch count must evenly dividable by 2^n in order to get extra mints. 
-			//ex. epoch 2 = 1 extramint, epoch 4 = 2 extra, epoch 8 = 3 extra mints, ..., epoch 32 = 5 extra mints w/ a divRound for the 5th mint(allows small balance token minting aka NFTs)
-			if(epochCount % (2**(x+1)) == 0){
-				TotalOwned = ERC20(ExtraFunds[x]).balanceOf(address(this));
-				if(TotalOwned != 0){
-					if( x % 3 == 0 && x != 0 && totalOd > 17600000){
-						totalToSend = ( TotalOwned * totalOd).divRound(100000000 * 20000 * (2**(x)) );
-						
-					}else{
-						totalToSend = ( TotalOwned * totalOd).div(100000000 * 20000 * (2**(x)) );
-					}
-				}
-				if(TotalOwned < totalToSend){ totalToSend = TotalOwned; }
-				require(ExtraFunds[x] != address(this), "No printing our token");
-			    	ERC20(ExtraFunds[x]).transfer(MintTo[x+1], totalToSend);
-			}
-			totalToSend = 0;
-		}
-        	
-        	
-		emit MegaMint(msg.sender, epochCount, challengeNumber, xy, totalOd );
-
-		return totalOd;
-
-	}
-
-
-
-	function mintTokensSameAddress(uint256 nonce, address[] memory ExtraFunds, address MintTo) public {
-		address[] memory dd = new address[](ExtraFunds.length + 1); 
-
-		for(uint x=0; x< (ExtraFunds.length + 1); x++)
-		{
-			dd[x] = MintTo;
-		}
-		
-		mintTokensArrayTo(nonce, ExtraFunds, dd);
-	}
-
 
 	function rewardAtCurrentTime() public view returns (uint256 reward){
 		return reward_amount;
@@ -1499,9 +1320,12 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 		uint TimeSinceLastDifficultyPeriod2 = blktimestamp - latestDifficultyPeriodStarted2;
 		uint adjusDiffTargetTime = targetTime * local_BLOCKS_PER_READJUSTMENT;
 		
+		uint MultiplierOfTime = 2;
+		if(localEpochCount - localEpochOld > 0){
+			
+			MultiplierOfTime = (((localEpochCount - localEpochOld - 1)/(local_BLOCKS_PER_READJUSTMENT/4))+2);
+		}
 		
-		uint MultiplierOfTime = (((localEpochCount - localEpochOld - 1)/(local_BLOCKS_PER_READJUSTMENT/4))+2);
-
 		if(MultiplierOfTime == 5){
 			MultiplierOfTime=4;
 		}
@@ -1526,8 +1350,14 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 		uint256 blktimestamp = block.timestamp;
 		
 		uint adjusDiffTargetTime =_BLOCKS_PER_READJUSTMENT* targetTime;
-
-		uint MultiplierOfTime = (((epochCount - epochOld - 1)/(_BLOCKS_PER_READJUSTMENT/4))+2);
+		uint localEpochCount = epochCount;
+		uint localEpochOld = epochOld;
+		
+		uint MultiplierOfTime = 2;
+		if(localEpochCount - localEpochOld > 0){
+			
+			MultiplierOfTime = (((localEpochCount - localEpochOld - 1)/(_BLOCKS_PER_READJUSTMENT/4))+2);
+		}
 		
 		if(MultiplierOfTime == 5){
 			MultiplierOfTime=4;
@@ -1564,10 +1394,16 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 				uint TimeSinceLastDifficultyPeriod2 = blktimestamp - latestDifficultyPeriodStarted2;
 				uint adjusDiffTargetTime = targetTime *  local_BLOCKS_PER_READJUSTMENT; 
 				
-				uint MultiplierOfTime = (((localEpochCount - localEpochOld - 1)/(local_BLOCKS_PER_READJUSTMENT/4))+2);
+				uint MultiplierOfTime = 2;
+				if(localEpochCount - localEpochOld > 0){
+					
+					MultiplierOfTime = (((localEpochCount - localEpochOld - 1)/(local_BLOCKS_PER_READJUSTMENT/4))+2);
+				}
+				
 				if(MultiplierOfTime == 5){
 					MultiplierOfTime=4;
 				}
+
 				uint adjustFinal = adjusDiffTargetTime * MultiplierOfTime;
 		
 			
@@ -1606,10 +1442,10 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 
 
 		uint local_BLOCKS_PER_READJUSTMENT = _BLOCKS_PER_READJUSTMENT;
-		uint localEpochCount = epochCount;
 		uint localEpochOld = epochOld;
+		uint localEpochCount = epochCount.add(1);
+		epochCount = localEpochCount;  
 		
-		epochCount = localEpochCount.add(1);
 		//every so often, readjust difficulty
 		if((localEpochCount - localEpochOld) % (local_BLOCKS_PER_READJUSTMENT / 16) == 0)
 		{
@@ -1620,8 +1456,12 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 			uint256 blktimestamp = block.timestamp;
 			uint TimeSinceLastDifficultyPeriod2 = blktimestamp - latestDifficultyPeriodStarted2;
 			uint adjusDiffTargetTime = targetTime *  local_BLOCKS_PER_READJUSTMENT; 
+			uint MultiplierOfTime = 2;
+			if(localEpochCount - localEpochOld > 0){
+				
+				MultiplierOfTime = (((localEpochCount - localEpochOld - 1)/(local_BLOCKS_PER_READJUSTMENT/4))+2);
+			}
 			
-			uint MultiplierOfTime = (((localEpochCount - localEpochOld - 1)/(_BLOCKS_PER_READJUSTMENT/4))+2);
 			if(MultiplierOfTime == 5){
 				MultiplierOfTime=4;
 			}
@@ -1954,3 +1794,4 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 */
+
