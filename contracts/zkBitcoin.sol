@@ -1570,7 +1570,7 @@ contract zkBitcoin is Ownable, ERC20Permit, IPaymaster {
 		uint adjusDiffTargetTime = targetTime *  epochTotal; 
 		uint256 blktimestamp = block.timestamp + addTime;
 		uint TimeSinceLastDifficultyPeriod2 = blktimestamp - latestDifficultyPeriodStarted2+1;
-       	uint miningTarget2 = 0;
+       		uint miningTarget2 = 0;
 
 		//if there were less eth blocks passed in time than expected
 		if( TimeSinceLastDifficultyPeriod2 < adjusDiffTargetTime )
