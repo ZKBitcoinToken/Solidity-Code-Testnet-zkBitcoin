@@ -90,7 +90,7 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
      * @dev See {IERC20-totalSupply}.
      */
     function totalSupply() public view virtual override returns (uint256) {
-        return 21000001000000000000000000;
+        return 21000000000000000000000000;
     }
 
     /**
